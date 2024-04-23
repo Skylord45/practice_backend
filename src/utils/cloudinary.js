@@ -26,6 +26,35 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
+const removeImageCloudinary = async(localFilePath) => {
+    try {
+        if(!localFilePath){
+            return null;
+        }
+        const response = await cloudinary.uploader.destroy(localFilePath, {"resource_type": "image"})
+        return response;
+        
+    } catch (error) {
+        throw new ApiError(401, error?.message || "not remove Image from cloudinary")
+    }
+}
+
+const removeVideoCloudinary = async(localFilePath) => {
+    try {
+        if(!localFilePath){
+            return null;
+        }
+        const response = await cloudinary.uploader.destroy(localFilePath, {"resource_type": "video"})
+        return response;
+        
+    } catch (error) {
+        throw new ApiError(401, error?.message || "not remove video from cloudinary")
+    }
+}
 
 
-export {uploadOnCloudinary}
+
+
+
+
+export {uploadOnCloudinary, removeVideoCloudinary, removeImageCloudinary}
