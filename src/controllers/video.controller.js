@@ -4,12 +4,31 @@ import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {uploadOnCloudinary, removeVideoCloudinary} from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
+    // TODO: get all videos based on query, sort, pagination
+
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
+    
+    if(page < 1 && limit > 10){
+        throw new ApiError(400, "Invalid pageNumber and limit")
+    }
+    if( !query && !query?.trim()){
+        throw new ApiError(400, "Qurey is not available") 
+    }
+    if(!isValidObjectId){
+        throw new ApiError(400, "Invalid userId") 
+    }
+
+    const user = await User.findById(userId)
+
+    if(!user){
+        throw new ApiError(400, "User not found") 
+    }
+
+
     
 })
 
