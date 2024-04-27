@@ -68,64 +68,130 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 // controller to return subscriber list of a channel => find in channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
+
     const {channelId} = req.params
-    if(!isValidObjectId(channelId)){
-        throw new ApiError(400, "Invalid user channel_id")
-    }
 
-    const channel = await User.findOne(channelId)
-    if(!channel){
-        throw new ApiError(400, "channel cannot found")
-    }
+   try {
 
-    // have list devanu che to aapde return array karavi sakay ka to pipeline lakhi sakay
+     if(!isValidObjectId(channelId)){
+         throw new ApiError(400, "Invalid user channel_id")
+     }
+ 
+     const channel = await User.findOne(channelId)
 
-    // (1) by array method 
-
-    // const channelSubscription = await Subscription.find({
-    //     channel : channelId,
-    // })
-
-    // if(!channelSubscription || channelSubscription.length === 0){
-    //     throw new ApiError(400, "no channel subscriber found !!")
-    // }
-    // const subscriberId = channelSubscription.map(Subscription => Subscription.subscriber)
-
-    // (2) by aggrigation pipelines
-
-    const Subscribers = await Subscription.aggregate([
-        {
-            $match : {
-                channel : new mongoose.Types.ObjectId(channelId)
-            }
-        },
-        {
-            $lookup : {
-                from : "User",
-                localField : "channel",
-                foreignField : "_id",
-                as : "subscriber"
-            }
-        },
-        {
-            $project : {
-                Subscribers : {
-                    _id : 1,
-                    userName : 1,
-                    email : 1
-                }
-            }
-        }
-    ])
-
-    return res
-    .status(200)
-    .json( new ApiResponse(200, Subscribers, "Subscriber fatched successfully"))
+     if(!channel){
+         throw new ApiError(400, "channel cannot found")
+     }
+ 
+     // have list devanu che to aapde return array karavi sakay ka to pipeline lakhi sakay
+ 
+     // (1) by array method 
+ 
+     // const channelSubscription = await Subscription.find({
+     //     channel : channelId,
+     // })
+ 
+     // if(!channelSubscription || channelSubscription.length === 0){
+     //     throw new ApiError(400, "no channel subscriber found !!")
+     // }
+     // const subscriberId = channelSubscription.map(Subscription => Subscription.subscriber)
+ 
+ 
+     // (2) by aggrigation pipelines
+ 
+     const Subscribers = await Subscription.aggregate([
+         {
+             $match : {
+                 channel : new mongoose.Types.ObjectId(channelId)
+             }
+         },
+         {
+             $lookup : {
+                 from : "User",
+                 localField : "channel",
+                 foreignField : "_id",
+                 as : "subscriber"
+             }
+         },
+         {
+             $project : {
+                 Subscribers : {
+                     _id : 1,
+                     userName : 1,
+                     email : 1
+                 }
+             }
+         }
+     ])
+ 
+     return res
+     .status(200)
+     .json( new ApiResponse(200, Subscribers, "Subscriber fatched successfully"))
+   } catch (error) {
+     throw new ApiError(500, error ,error?.message || "something went wrong while fatching subscriber  ")
+   }
 })
 
 // controller to return channel list to which user has subscribed => find in subscriber
 const getSubscribedChannels = asyncHandler(async (req, res) => {
+    
     const { subscriberId } = req.params
+
+    try {
+        
+    
+        if(!isValidObjectId(subscriberId)){
+            throw new ApiError(400, "Invalid subscriber_id")
+        }
+    
+        const subscriber = await User.findById(subscriberId)
+        if(!subscriber){
+            throw new ApiError(400, "subscriber couldnot found")
+        }
+    
+        const subscribedChannel = await Subscription.aggregate([
+            {
+                $match:{
+                    subscriber : new mongoose.Types.ObjectId(subscriberId)
+                }
+            },
+            {
+                // left join from user
+                $lookup:{
+                    from:"user",
+                    localField:"subscriber",
+                    foreignField:"_id",
+                    as:"subscribed"
+                }
+            },
+            {
+                // what to show user
+                $project:{
+                    subscribedChannel:{
+                        _id : 1,
+                        fullName : 1,
+                        userName : 1,
+                        email : 1,
+                    }
+                }
+    
+            }
+        ])
+    
+        if(!subscribedChannel.length){
+            throw new ApiError(400, "No channel subscribed")
+        }
+    
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(200, subscribedChannel, "channel subscribed successfully fetched !!")
+        )
+    
+    } catch (error) {
+        throw new ApiError(500, error ,error?.message || "something went wrong while fatching channe's subscribed")
+    }
+
 })
 
 export {
